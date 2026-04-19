@@ -1,29 +1,42 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net8.0-windows</TargetFramework>
+    <TargetFramework>net8.0-windows10.0.19041.0</TargetFramework>
     <UseWindowsForms>true</UseWindowsForms>
     <UseWPF>true</UseWPF>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <OutputType>Library</OutputType>
     <RootNamespace>EasyTabs</RootNamespace>
     <AssemblyName>EasyTabs</AssemblyName>
-    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+    <Title>.NET Title Bar Tabs</Title>
+    <Description>Library to enable .NET WinForms apps to easily render a set of tabs in their titlebar space, similar to Chrome, Firefox, Edge, etc.</Description>
+    <Company>Luke Stratman</Company>
+    <Product>.NET Title Bar Tabs</Product>
+    <Copyright>Copyright © 2020</Copyright>
+    <Trademark></Trademark>
+    <NeutralLanguage></NeutralLanguage>
+    <ComVisible>false</ComVisible>
+    <AssemblyVersion>1.0.0.0</AssemblyVersion>
+    <FileVersion>1.0.0.0</FileVersion>
   </PropertyGroup>
 
   <!-- Dependencies: use NuGet PackageReferences for modern compatibility -->
   <ItemGroup>
     <PackageReference Include="Svg" Version="3.4.0" />
     <PackageReference Include="WindowsAPICodePack" Version="8.0.15.1" />
-    <PackageReference Include="PInvoke.User32" Version="0.7.104" />
-    <PackageReference Include="PInvoke.Kernel32" Version="0.7.104" />
-    <PackageReference Include="PInvoke.Gdi32" Version="0.7.104" />
-    <PackageReference Include="PInvoke.UxTheme" Version="0.7.104" />
-    <PackageReference Include="PInvoke.DwmApi" Version="0.7.104" />
+    <PackageReference Include="Microsoft.Windows.CsWin32" Version="0.3.183" PrivateAssets="all" />
   </ItemGroup>
 
   <ItemGroup>
     <Compile Remove="TestApp\**\*.cs" />
     <EmbeddedResource Remove="TestApp\**\*" />
     <None Remove="TestApp\**\*" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <AssemblyAttribute Include="System.Runtime.Versioning.SupportedOSPlatformAttribute">
+      <_Parameter1>windows10.0.19041</_Parameter1>
+    </AssemblyAttribute>
   </ItemGroup>
 
   <!-- SDK-style default item inclusion handles .cs/.resx/resources -->

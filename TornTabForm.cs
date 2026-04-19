@@ -6,6 +6,9 @@ using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
+using Windows.Win32.Foundation;
+using Windows.Win32.UI.WindowsAndMessaging;
+using HOOKPROC = Windows.Win32.UI.WindowsAndMessaging.HOOKPROC;
 
 namespace EasyTabs
 {
@@ -28,7 +31,7 @@ namespace EasyTabs
 		protected bool _hookInstalled = false;
 
 		/// <summary>Delegate of <see cref="MouseHookCallback" />; declared as a member variable to keep it from being garbage collected.</summary>
-		protected HOOKPROC _hookproc = null;
+		private HOOKPROC _hookproc = null;
 
 		/// <summary>Flag indicating whether or not the constructor has finished running.</summary>
 		private bool _initialized;
@@ -109,11 +112,11 @@ namespace EasyTabs
 		/// <param name="wParam">Additional information about the message.</param>
 		/// <param name="lParam">Additional information about the message.</param>
 		/// <returns>A zero value if the procedure processes the message; a nonzero value if the procedure ignores the message.</returns>
-		protected IntPtr MouseHookCallback(int nCode, IntPtr wParam, IntPtr lParam)
+		private LRESULT MouseHookCallback(int nCode, WPARAM wParam, LPARAM lParam)
 		{
-			if (nCode >= 0 && (int) WM.WM_MOUSEMOVE == (int) wParam)
+			if (nCode >= 0 && (int) WM.WM_MOUSEMOVE == (int) wParam.Value)
 			{
-				MSLLHOOKSTRUCT hookStruct = (MSLLHOOKSTRUCT) Marshal.PtrToStructure(lParam, typeof (MSLLHOOKSTRUCT));
+				MSLLHOOKSTRUCT hookStruct = Marshal.PtrToStructure<MSLLHOOKSTRUCT>((IntPtr)lParam.Value);
 				Point cursorPosition = new Point(hookStruct.pt.x, hookStruct.pt.y);
 
 				SetWindowPosition(cursorPosition);

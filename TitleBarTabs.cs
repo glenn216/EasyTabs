@@ -5,7 +5,12 @@ using System.ComponentModel;
 using System.Drawing;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Runtime.Versioning;
 using System.Windows.Forms;
+using Windows.Win32.Foundation;
+using Windows.Win32.Graphics.Gdi;
+using Windows.Win32.UI.WindowsAndMessaging;
+using HOOKPROC = Windows.Win32.UI.WindowsAndMessaging.HOOKPROC;
 using Point = System.Drawing.Point;
 using Size = System.Drawing.Size;
 
@@ -143,27 +148,34 @@ namespace EasyTabs
         public IntPtr dwExtraInfo;
     }
 
-    public delegate IntPtr HOOKPROC(int nCode, IntPtr wParam, IntPtr lParam);
-
+    [SupportedOSPlatform("windows10.0.19041")]
     internal static class User32
     {
-        [DllImport("user32.dll", SetLastError = true)]
-        public static extern bool GetWindowRect(IntPtr hWnd, out RECT lpRect);
+        public static bool GetWindowRect(IntPtr hWnd, out RECT lpRect)
+        {
+            bool result = Windows.Win32.PInvoke.GetWindowRect(new HWND(hWnd), out Windows.Win32.Foundation.RECT nativeRect);
+            lpRect = new RECT
+            {
+                left = nativeRect.left,
+                top = nativeRect.top,
+                right = nativeRect.right,
+                bottom = nativeRect.bottom
+            };
+            return result;
+        }
 
-        [DllImport("user32.dll", SetLastError = true)]
-        public static extern IntPtr SetWindowsHookEx(WH idHook, HOOKPROC lpfn, IntPtr hMod, uint dwThreadId);
+        public static unsafe IntPtr SetWindowsHookEx(WH idHook, HOOKPROC lpfn, IntPtr hMod, uint dwThreadId)
+            => (IntPtr)Windows.Win32.PInvoke.SetWindowsHookEx((WINDOWS_HOOK_ID)idHook, lpfn, new HINSTANCE(hMod), dwThreadId).Value;
 
-        [DllImport("user32.dll", SetLastError = true)]
-        public static extern bool UnhookWindowsHookEx(IntPtr hhk);
+        public static bool UnhookWindowsHookEx(IntPtr hhk)
+            => Windows.Win32.PInvoke.UnhookWindowsHookEx(new HHOOK(hhk));
 
-        [DllImport("user32.dll", SetLastError = true)]
-        public static extern IntPtr CallNextHookEx(IntPtr hhk, int nCode, IntPtr wParam, IntPtr lParam);
+        public static LRESULT CallNextHookEx(IntPtr hhk, int nCode, WPARAM wParam, LPARAM lParam)
+            => Windows.Win32.PInvoke.CallNextHookEx(new HHOOK(hhk), nCode, wParam, lParam);
 
-        [DllImport("user32.dll", SetLastError = true)]
-        public static extern uint GetDoubleClickTime();
+        public static uint GetDoubleClickTime() => Windows.Win32.PInvoke.GetDoubleClickTime();
 
-        [DllImport("user32.dll", SetLastError = true)]
-        public static extern bool UpdateLayeredWindow(
+        public static unsafe bool UpdateLayeredWindow(
             IntPtr hwnd,
             IntPtr hdcDst,
             ref POINT pptDst,
@@ -172,62 +184,100 @@ namespace EasyTabs
             ref POINT pprSrc,
             int crKey,
             ref BLENDFUNCTION pblend,
-            ULW dwFlags);
+            ULW dwFlags)
+        {
+            Point ptDst = new Point(pptDst.x, pptDst.y);
+            Point ptSrc = new Point(pprSrc.x, pprSrc.y);
+            Windows.Win32.Foundation.SIZE nativeSize = new Windows.Win32.Foundation.SIZE(psize.cx, psize.cy);
 
-        [DllImport("user32.dll", SetLastError = true)]
-        public static extern IntPtr GetDC(IntPtr hWnd);
+            Windows.Win32.Graphics.Gdi.BLENDFUNCTION nativeBlend = new Windows.Win32.Graphics.Gdi.BLENDFUNCTION
+            {
+                BlendOp = pblend.BlendOp,
+                BlendFlags = pblend.BlendFlags,
+                SourceConstantAlpha = pblend.SourceConstantAlpha,
+                AlphaFormat = pblend.AlphaFormat
+            };
 
-        [DllImport("user32.dll", SetLastError = true)]
-        public static extern IntPtr GetWindowDC(IntPtr hWnd);
+            return Windows.Win32.PInvoke.UpdateLayeredWindow(
+                new HWND(hwnd),
+                new HDC(hdcDst),
+                ptDst,
+                nativeSize,
+                new HDC(hdcSrc),
+                ptSrc,
+                (COLORREF)(uint)crKey,
+                nativeBlend,
+                (UPDATE_LAYERED_WINDOW_FLAGS)(uint)dwFlags);
+        }
 
-        [DllImport("user32.dll", SetLastError = true)]
-        public static extern int ReleaseDC(IntPtr hWnd, IntPtr hDC);
+        public static unsafe IntPtr GetDC(IntPtr hWnd) => (IntPtr)Windows.Win32.PInvoke.GetDC(new HWND(hWnd)).Value;
 
-        [DllImport("user32.dll", SetLastError = true)]
-        public static extern int GetSystemMetrics(int nIndex);
+        public static unsafe IntPtr GetWindowDC(IntPtr hWnd) => (IntPtr)Windows.Win32.PInvoke.GetWindowDC(new HWND(hWnd)).Value;
 
-        [DllImport("user32.dll", SetLastError = true)]
-        public static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
+        public static int ReleaseDC(IntPtr hWnd, IntPtr hDC) => Windows.Win32.PInvoke.ReleaseDC(new HWND(hWnd), new HDC(hDC));
+
+        public static int GetSystemMetrics(int nIndex) => Windows.Win32.PInvoke.GetSystemMetrics((SYSTEM_METRICS_INDEX)nIndex);
+
+        public static bool ShowWindow(IntPtr hWnd, int nCmdShow) => Windows.Win32.PInvoke.ShowWindow(new HWND(hWnd), (SHOW_WINDOW_CMD)nCmdShow);
     }
 
     internal static class Kernel32
     {
-        [DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
-        public static extern IntPtr GetModuleHandle(string lpModuleName);
+        public static IntPtr GetModuleHandle(string lpModuleName)
+            => Windows.Win32.PInvoke.GetModuleHandle(lpModuleName).DangerousGetHandle();
     }
 
     internal static class Gdi32
     {
-        [DllImport("gdi32.dll", SetLastError = true)]
-        public static extern IntPtr CreateCompatibleDC(IntPtr hdc);
+        public static unsafe IntPtr CreateCompatibleDC(IntPtr hdc) => (IntPtr)Windows.Win32.PInvoke.CreateCompatibleDC(new HDC(hdc)).Value;
 
-        [DllImport("gdi32.dll", SetLastError = true)]
-        public static extern bool DeleteDC(IntPtr hdc);
+        public static bool DeleteDC(IntPtr hdc) => Windows.Win32.PInvoke.DeleteDC(new HDC(hdc));
 
-        [DllImport("gdi32.dll", SetLastError = true)]
-        public static extern IntPtr SelectObject(IntPtr hdc, IntPtr hObject);
+        public static unsafe IntPtr SelectObject(IntPtr hdc, IntPtr hObject) => (IntPtr)Windows.Win32.PInvoke.SelectObject(new HDC(hdc), new HGDIOBJ(hObject)).Value;
 
-        [DllImport("gdi32.dll", SetLastError = true)]
-        public static extern bool DeleteObject(IntPtr hObject);
+        public static bool DeleteObject(IntPtr hObject) => Windows.Win32.PInvoke.DeleteObject(new HGDIOBJ(hObject));
     }
 
     internal static class Dwmapi
     {
-        [DllImport("dwmapi.dll", PreserveSig = true)]
-        public static extern int DwmIsCompositionEnabled(out bool pfEnabled);
+        public static int DwmIsCompositionEnabled(out bool pfEnabled)
+        {
+            int hr = Windows.Win32.PInvoke.DwmIsCompositionEnabled(out BOOL enabled);
+            pfEnabled = enabled;
+            return hr;
+        }
 
-        [DllImport("dwmapi.dll", PreserveSig = true)]
-        public static extern int DwmExtendFrameIntoClientArea(IntPtr hWnd, ref MARGINS pMarInset);
+        public static int DwmExtendFrameIntoClientArea(IntPtr hWnd, ref MARGINS pMarInset)
+        {
+            Windows.Win32.UI.Controls.MARGINS nativeMargins = new Windows.Win32.UI.Controls.MARGINS
+            {
+                cxLeftWidth = pMarInset.cxLeftWidth,
+                cxRightWidth = pMarInset.cxRightWidth,
+                cyTopHeight = pMarInset.cyTopHeight,
+                cyBottomHeight = pMarInset.cyBottomHeight
+            };
+
+            return Windows.Win32.PInvoke.DwmExtendFrameIntoClientArea(new HWND(hWnd), in nativeMargins);
+        }
     }
 
     internal static class Uxtheme
     {
-        [DllImport("uxtheme.dll", ExactSpelling = true, CharSet = CharSet.Unicode)]
-        public static extern int SetWindowThemeAttribute(
+        public static unsafe int SetWindowThemeAttribute(
             IntPtr hwnd,
             WINDOWTHEMEATTRIBUTETYPE type,
             ref WTA_OPTIONS options,
-            uint size);
+            uint size)
+        {
+            fixed (WTA_OPTIONS* pOptions = &options)
+            {
+                return Windows.Win32.PInvoke.SetWindowThemeAttribute(
+                    new HWND(hwnd),
+                    (Windows.Win32.UI.Controls.WINDOWTHEMEATTRIBUTETYPE)type,
+                    pOptions,
+                    size);
+            }
+        }
     }
 
     /// <summary>

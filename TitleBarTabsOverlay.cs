@@ -10,6 +10,9 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Windows.Forms;
+using Windows.Win32.Foundation;
+using Windows.Win32.UI.WindowsAndMessaging;
+using HOOKPROC = Windows.Win32.UI.WindowsAndMessaging.HOOKPROC;
 using Timer = System.Timers.Timer;
 
 namespace EasyTabs
@@ -61,7 +64,7 @@ namespace EasyTabs
 		protected IntPtr _hookId;
 
 		/// <summary>Delegate of <see cref="MouseHookCallback" />; declared as a member variable to keep it from being garbage collected.</summary>
-		protected HOOKPROC _hookproc = null;
+		private HOOKPROC _hookproc = null;
 
 		/// <summary>Index of the tab, if any, whose close button is being hovered over.</summary>
 		protected int _isOverCloseButtonForTab = -1;
@@ -654,23 +657,23 @@ namespace EasyTabs
 		/// <param name="wParam">Additional information about the message.</param>
 		/// <param name="lParam">Additional information about the message.</param>
 		/// <returns>A zero value if the procedure processes the message; a nonzero value if the procedure ignores the message.</returns>
-		protected IntPtr MouseHookCallback(int nCode, IntPtr wParam, IntPtr lParam)
+		private LRESULT MouseHookCallback(int nCode, WPARAM wParam, LPARAM lParam)
 		{
 			MouseEvent mouseEvent = new MouseEvent
 			{
 				nCode = nCode,
-				wParam = wParam,
-				lParam = lParam
+				wParam = (IntPtr)wParam.Value,
+				lParam = (IntPtr)lParam.Value
 			};
 
-			if (nCode >= 0 && (int) WM.WM_MOUSEMOVE == (int) wParam)
+			if (nCode >= 0 && (int) WM.WM_MOUSEMOVE == (int) wParam.Value)
 			{
-				mouseEvent.MouseData = (MSLLHOOKSTRUCT) Marshal.PtrToStructure(lParam, typeof (MSLLHOOKSTRUCT));
+				mouseEvent.MouseData = Marshal.PtrToStructure<MSLLHOOKSTRUCT>((IntPtr)lParam.Value);
 			}
 
 			_mouseEvents.Add(mouseEvent);
 
-            if (nCode >= 0 && (int) WM.WM_LBUTTONDOWN == (int) wParam)
+            if (nCode >= 0 && (int) WM.WM_LBUTTONDOWN == (int) wParam.Value)
             {
                 long currentTicks = DateTime.Now.Ticks;
 

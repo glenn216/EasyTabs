@@ -1,13 +1,23 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net8.0-windows</TargetFramework>
+    <TargetFramework>net8.0-windows10.0.19041.0</TargetFramework>
     <UseWindowsForms>true</UseWindowsForms>
     <OutputType>WinExe</OutputType>
     <PlatformTarget>x64</PlatformTarget>
     <Prefer32Bit>false</Prefer32Bit>
     <RootNamespace>TestApp</RootNamespace>
     <AssemblyName>TestApp</AssemblyName>
-    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+    <Title>.NET Title Bar Tabs Test App</Title>
+    <Description>Test application for the .NET title bar tabs project</Description>
+    <Company>Luke Stratman</Company>
+    <Product>.NET Title Bar Tabs Test App</Product>
+    <Copyright>Copyright © 2020</Copyright>
+    <Trademark></Trademark>
+    <NeutralLanguage></NeutralLanguage>
+    <ComVisible>false</ComVisible>
+    <AssemblyVersion>1.0.0.0</AssemblyVersion>
+    <FileVersion>1.0.0.0</FileVersion>
   </PropertyGroup>
 
   <ItemGroup>
