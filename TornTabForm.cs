@@ -6,9 +6,6 @@ using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
-using Win32Interop.Enums;
-using Win32Interop.Methods;
-using Win32Interop.Structs;
 
 namespace EasyTabs
 {

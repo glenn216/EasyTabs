@@ -10,9 +10,6 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Windows.Forms;
-using Win32Interop.Enums;
-using Win32Interop.Methods;
-using Win32Interop.Structs;
 using Timer = System.Timers.Timer;
 
 namespace EasyTabs
@@ -295,7 +292,10 @@ namespace EasyTabs
 
 			// Kill the mouse events processing thread
 			_mouseEvents.CompleteAdding();
-			_mouseEventsThread.Abort();
+			if (_mouseEventsThread != null && _mouseEventsThread.IsAlive)
+			{
+				_mouseEventsThread.Join(500);
+			}
 		}
 
 		private void HideTooltip()
@@ -1150,7 +1150,7 @@ namespace EasyTabs
 			// ReSharper restore InconsistentNaming
 
 			/// <summary>Data associated with the mouse event.</summary>
-			public MSLLHOOKSTRUCT? MouseData
+			internal MSLLHOOKSTRUCT? MouseData
 			{
 				get;
 				set;
