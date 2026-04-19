@@ -11,6 +11,8 @@ namespace EasyTabs
 	{
 		/// <summary>Flag indicating whether or not this tab is active.</summary>
 		protected bool _active;
+		private Control _hostedControl;
+		private bool _disposeHostedControl;
 
 		/// <summary>Content that should be displayed within the tab.</summary>
 		protected Form _content;
@@ -24,6 +26,18 @@ namespace EasyTabs
 		{
 			ShowCloseButton = true;
 			Parent = parent;
+		}
+
+		public TitleBarTab(TitleBarTabs parent, Form content)
+			: this(parent)
+		{
+			Content = content;
+		}
+
+		public TitleBarTab(TitleBarTabs parent, Control content)
+			: this(parent)
+		{
+			SetContent(content);
 		}
 
 		/// <summary>Parent window that contains this tab.</summary>
@@ -129,6 +143,8 @@ namespace EasyTabs
 
 			set
 			{
+				DetachHostedControl();
+
 				if (_content != null)
 				{
 					_content.FormClosing -= Content_Closing;
@@ -144,6 +160,41 @@ namespace EasyTabs
 				Content.FormClosing += Content_Closing;
 				Content.TextChanged += Content_TextChanged;
 			}
+		}
+
+		public void SetContent(Control content, bool disposeHostedControl = true)
+		{
+			if (content == null)
+			{
+				throw new ArgumentNullException(nameof(content));
+			}
+
+			if (content is Form form)
+			{
+				Content = form;
+				return;
+			}
+
+			if (content.Parent != null)
+			{
+				content.Parent.Controls.Remove(content);
+			}
+
+			Form hostForm = new Form
+			{
+				FormBorderStyle = FormBorderStyle.None,
+				TopLevel = false,
+				Text = string.IsNullOrWhiteSpace(content.Text) ? content.Name : content.Text
+			};
+
+			content.Dock = DockStyle.Fill;
+			hostForm.Controls.Add(content);
+
+			_hostedControl = content;
+			_disposeHostedControl = disposeHostedControl;
+			_hostedControl.TextChanged += HostedControl_TextChanged;
+
+			Content = hostForm;
 		}
 
 		/// <summary>
@@ -196,6 +247,32 @@ namespace EasyTabs
 		{
 			Closing = null;
 			TextChanged = null;
+		}
+
+		private void HostedControl_TextChanged(object sender, EventArgs e)
+		{
+			if (_content != null && _hostedControl != null)
+			{
+				_content.Text = _hostedControl.Text;
+			}
+		}
+
+		private void DetachHostedControl()
+		{
+			if (_hostedControl == null)
+			{
+				return;
+			}
+
+			_hostedControl.TextChanged -= HostedControl_TextChanged;
+
+			if (_disposeHostedControl && !_hostedControl.IsDisposed)
+			{
+				_hostedControl.Dispose();
+			}
+
+			_hostedControl = null;
+			_disposeHostedControl = false;
 		}
 	}
 }
